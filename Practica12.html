@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Login</title>
+	<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+	<style>
+		input {
+			background-color: rgb(207, 186, 186);
+		}
+		body {
+			background-color: rgb(182, 184, 211);
+		}
+	</style>
+</head>
+<body>
+	<div id="main">
+		<h3>Inicio de sesión {{ name_app }}</h3>
+		
+		<form @submit.prevent="login" v-if="!isValid">
+			<fieldset>
+				<label>Email</label>
+				<input type="email" v-model="email" required>
+			</fieldset>
+
+			<br>
+
+			<fieldset>
+				<label>Password</label>
+				<input type="password" v-model="password" required>
+			</fieldset>
+			<button type="submit">Ingresar</button>
+		</form>
+
+		<hr>
+
+		<h2 v-if="isValid">Bienvenido, Usuario {{ loggedInUser.name }}</h2>
+
+		
+		<h3 v-if="isValid">Usuarios Registrados:</h3>
+		<ul v-if="isValid">
+			<li v-for="user in users" :key="user.email">{{ user.email }} - {{ user.name }}</li>
+		</ul>
+	</div>
+
+	<script>
+		const { createApp } = Vue;
+
+		createApp({
+			data() {
+				return {
+					email: '',
+					password: '',
+					isValid: false,
+					loggedInUser: null,
+					users: []
+				};
+			},
+			mounted() {
+				const user = sessionStorage.getItem('loggedInUser');
+				if (user) {
+					this.loggedInUser = JSON.parse(user);
+					this.isValid = true;
+					this.fetchUsers();
+				}
+			},
+			methods: {
+                
+				login() {
+					fetch('users.json')
+						.then(response => response.json())
+						.then(users => {
+							const user = users.find(u => u.email === this.email && u.password === this.password);
+							if (user) {
+								this.isValid = true;
+								this.loggedInUser = user;
+								sessionStorage.setItem('loggedInUser', JSON.stringify(user));
+								this.fetchUsers();
+							} else {
+								alert('Credenciales incorrectas');
+							}
+						})
+						.catch(error => console.error('Error fetching users:', error));
+				},
+				fetchUsers() {
+					fetch('users.json')
+						.then(response => response.json())
+						.then(data => {
+							this.users = data;
+						})
+						.catch(error => console.error('Error fetching users:', error));
+				}
+			}
+		}).mount('#main');
+	</script>
+</body>
+</html>
